@@ -5,6 +5,7 @@ based on prompting the ChatGPT API.
 """
 
 # import sqlite3
+# import openai
 import sys
 import os
 import urllib.request
@@ -74,20 +75,23 @@ def parse_json(data_dict):
         # is a string of all its parent + itself connected by underscores
         key_list = traverse_json(data, "")
         key_list = list(key_list)
-        key_dict = rank_by_occurrence(key_list)
-        print(key_dict)
+        if len(key_list) > 100: # if deemed large json, expect repetitive structure
+            key_dict = rank_by_occurrence(key_list)
+            
+
 
 def traverse_json(data, key):
     """
     Recursively traverse json data and flatten key structure.
-    construct list of all terminal keys and their parent keys. 
+    construct list of all terminal keys and their parent keys.
+    lists are exposed and marked by a "-list" suffix.
     """
     if isinstance(data, dict):
         for k, v in data.items():
             yield from  traverse_json(v, key + "_" + k)
     elif isinstance(data, list):
         for v in data:
-            yield from traverse_json(v, key)
+            yield from traverse_json(v, key + "-list")
     else:
         yield key
 
@@ -107,7 +111,7 @@ def rank_by_occurrence(key_list):
     return key_dict
 
 def main():
-    key, urls = parse_args()
+    api_key, urls = parse_args()
     data_dict = get_json(urls)
     parse_json(data_dict)
 
